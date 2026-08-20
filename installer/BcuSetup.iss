@@ -182,6 +182,16 @@ Source: "{#InputDir}\win-x86\CleanLogs.bat";    DestDir: "{app}\win-x86"; Compon
 
 #endif
 
+[Registry]
+Root: HKCR; Subkey: "lnkfile\shell\BCUninstaller.Uninstall"; ValueType: string; ValueName: "MUIVerb"; ValueData: "Uninstall with BCUninstaller"; Flags: uninsdeletekey; Check: IsNotPortable
+Root: HKCR; Subkey: "lnkfile\shell\BCUninstaller.Uninstall"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#MyAppExeName}"; Check: IsNotPortable
+#ifdef Light
+Root: HKCR; Subkey: "lnkfile\shell\BCUninstaller.Uninstall\command"; ValueType: string; ValueData: """{app}\BCU-console.exe"" shortcut-uninstall ""%1"""; Check: IsNotPortable
+#else
+Root: HKCR; Subkey: "lnkfile\shell\BCUninstaller.Uninstall\command"; ValueType: string; ValueData: """{app}\win-x64\BCU-console.exe"" shortcut-uninstall ""%1"""; Check: Is64BitInstallMode and IsNotPortable
+Root: HKCR; Subkey: "lnkfile\shell\BCUninstaller.Uninstall\command"; ValueType: string; ValueData: """{app}\win-x86\BCU-console.exe"" shortcut-uninstall ""%1"""; Check: not Is64BitInstallMode and IsNotPortable
+#endif
+
 [InstallDelete]
 Name: {app}\BCU-launcher.exe; Type: files
 ; Make sure there are no old stale versions. Settings file is kept in the root directory so it will survive.

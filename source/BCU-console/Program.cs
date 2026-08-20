@@ -54,6 +54,8 @@ Switches:
 Return codes:
  0	- The operation completed successfully.
  1	- Invalid arguments.
+ 2	- The shortcut could not be resolved to an executable.
+ 3	- No uniquely identified application was found for the shortcut.
  1223	- The operation was canceled by the user.");
         }
 
@@ -96,6 +98,7 @@ Return codes:
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern uint GetConsoleProcessList(uint[] lpdwProcessList, uint dwProcessCount);
 
+        [STAThread]
         private static int Main(string[] args)
         {
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
@@ -123,6 +126,8 @@ Return codes:
                 {
                     case "uninstall":
                         return ProcessUninstallCommand(args.Skip(1).ToArray());
+                    case "shortcut-uninstall":
+                        return ProcessShortcutUninstallCommand(args.Skip(1).ToArray());
                     case "list":
                         return ProcessListCommand(args.Skip(1).ToArray());
                     case "export":
@@ -247,12 +252,43 @@ Return codes:
             return RunUninstall(list, isQuiet, isUnattended, isVerbose, junkConfidenceLevel);
         }
 
+        private static int ProcessShortcutUninstallCommand(string[] args)
+        {
+            if (args.Length != 1 || args[0].StartsWith("/", StringComparison.Ordinal))
+                return ShowInvalidSyntaxError("Specify exactly one shortcut path");
+
+            if (!ShortcutTargetResolver.TryGetExecutableTarget(args[0], out var executablePath))
+            {
+                Console.WriteLine(@"The shortcut could not be resolved to an existing executable file.");
+                return 2;
+            }
+
+            Console.WriteLine($@"Shortcut target: {executablePath}");
+            var applications = QueryApps(false, false, false);
+            var match = ShortcutUninstallMatcher.MatchExecutablePath(applications, executablePath);
+            if (match.Status == ShortcutUninstallMatchStatus.NotFound)
+            {
+                Console.WriteLine(@"No installed application could be identified from this shortcut target.");
+                return 3;
+            }
+
+            if (match.Status == ShortcutUninstallMatchStatus.Ambiguous)
+            {
+                Console.WriteLine(@"More than one installed application matches this shortcut target. No application was uninstalled.");
+                return 3;
+            }
+
+            Console.WriteLine($@"The application will now be uninstalled PERMANENTLY: {match.Entry.DisplayName}");
+            return RunUninstallTargets(new List<ApplicationUninstallerEntry> {match.Entry}, false, false);
+        }
+
         private static int RunUninstall(UninstallList list, bool isQuiet, bool isUnattended, bool isVerbose, ConfidenceLevel? junkConfidenceLevel = null)
         {
             Console.WriteLine(@"Starting bulk uninstall...");
-            var apps = QueryApps(isQuiet, isUnattended, isVerbose);
-
-            apps = apps.Where(a => list.TestEntry(a) == true).OrderBy(x => x.DisplayName).ToList();
+            var apps = QueryApps(isQuiet, isUnattended, isVerbose)
+                .Where(a => list.TestEntry(a) == true)
+                .OrderBy(x => x.DisplayName)
+                .ToList();
 
             if (apps.Count == 0)
             {
@@ -261,8 +297,13 @@ Return codes:
             }
 
             Console.WriteLine(@"{0} application(s) were matched by the list: {1}", apps.Count,
-                          string.Join("; ", apps.Select(x => x.DisplayName)));
+                string.Join("; ", apps.Select(x => x.DisplayName)));
+            return RunUninstallTargets(apps, isQuiet, isUnattended, junkConfidenceLevel);
+        }
 
+        private static int RunUninstallTargets(IList<ApplicationUninstallerEntry> apps, bool isQuiet,
+            bool isUnattended, ConfidenceLevel? junkConfidenceLevel = null)
+        {
             Console.WriteLine(@"These applications will now be uninstalled PERMANENTLY.");
 
             if (!isUnattended)
@@ -278,7 +319,7 @@ Return codes:
             var task = UninstallManager.CreateBulkUninstallTask(targets,
                 new BulkUninstallConfiguration(false, isQuiet, false, true, true));
             var isDone = false;
-            task.OnStatusChanged += (sender, args) =>
+            task.OnStatusChanged += (sender, eventArgs) =>
             {
                 ClearCurrentConsoleLine();
 
@@ -306,26 +347,30 @@ Return codes:
             while (!isDone)
                 Thread.Sleep(250);
 
-            if (junkConfidenceLevel is not null) {
+            if (junkConfidenceLevel is not null)
+            {
                 Console.WriteLine($"Starting junk cleanup with a minimum confidence level of {junkConfidenceLevel}");
                 List<IJunkResult> remainingJunk = JunkManager.FindJunk(apps, apps, _ => { })
                     .Where(j => j.Confidence.GetConfidence() >= junkConfidenceLevel)
                     .ToList();
 
-                if (!remainingJunk.Any()) {
+                if (!remainingJunk.Any())
+                {
                     Console.WriteLine($"No remaining junk found for any target applications.");
                     return 0;
                 }
 
                 Console.WriteLine("The following junk items will be permanently deleted:");
                 remainingJunk.ForEach(Console.WriteLine);
-                if (!isUnattended) {
+                if (!isUnattended)
+                {
                     Console.WriteLine(@"Do you want to continue? [Y]es/[N]o");
                     if (Console.ReadKey(true).Key != ConsoleKey.Y)
                         return CancelledByUser();
                 }
 
-                foreach (ApplicationUninstallerEntry entry in apps) {
+                foreach (ApplicationUninstallerEntry entry in apps)
+                {
                     // ApplicationUninstallerEntry doesn't currently implement an equality operator so ToLongString() will do as an object "hash".
                     List<IJunkResult> appJunk = remainingJunk.Where(j => j.Application.ToLongString().Equals(entry.ToLongString())).ToList();
                     Console.WriteLine($"{entry.DisplayName} Junk - {appJunk.Count} Entries Found");

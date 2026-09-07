@@ -119,7 +119,9 @@ namespace UninstallTools.Junk.Confidence
 
             // Check if any of the other apps match any of the entries, as long as the app names don't contain this app's name
             var otherFiltered = otherUninstallers.Where(x => x != thisUninstaller && !x.DisplayNameTrimmed.Contains(thisDisplayName)).ToList();
-            var matchingWithOther = createdJunk.Where(x => otherFiltered.Any(y => y.DisplayNameTrimmed.Contains(x.Value)));
+            var searchIndex = new StringSearchIndex(createdJunk.Select(x => x.Value));
+            var namesUsedByOtherApps = searchIndex.FindMatches(otherFiltered.Select(x => x.DisplayNameTrimmed));
+            var matchingWithOther = createdJunk.Where(x => namesUsedByOtherApps.Contains(x.Value));
 
             if (createdJunk.Count >= 2)
             {

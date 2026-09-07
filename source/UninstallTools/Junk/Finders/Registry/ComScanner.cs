@@ -27,12 +27,16 @@ namespace UninstallTools.Junk.Finders.Registry
         };
 
         private List<ComEntry> _comEntries;
+        private Dictionary<string, ComEntry> _comEntriesByGuid;
         private Dictionary<string, string[]> _extensionKeyNames;
 
         public override string CategoryName => Localisation.Junk_Clsid_GroupName; // "COM Objects";
 
         public override IEnumerable<IJunkResult> FindJunk(ApplicationUninstallerEntry target)
         {
+            if (target == null)
+                yield break;
+
             if (string.IsNullOrEmpty(target.InstallLocation))
                 yield break;
 
@@ -128,6 +132,7 @@ namespace UninstallTools.Junk.Finders.Registry
             base.Setup(allUninstallers);
 
             _comEntries = new List<ComEntry>();
+            _comEntriesByGuid = new Dictionary<string, ComEntry>(StringComparer.OrdinalIgnoreCase);
 
             _extensionKeyNames = new Dictionary<string, string[]>();
 
@@ -141,8 +146,8 @@ namespace UninstallTools.Junk.Finders.Registry
 
                     try
                     {
-                        GetClsidEntries(_comEntries, classesKey);
-                        GetTypeLibEntries(_comEntries, classesKey);
+                        GetClsidEntries(_comEntries, _comEntriesByGuid, classesKey);
+                        GetTypeLibEntries(_comEntries, _comEntriesByGuid, classesKey);
                     }
                     catch (SystemException ex)
                     {
@@ -163,10 +168,9 @@ namespace UninstallTools.Junk.Finders.Registry
                     {
                         using (var proxyKey = interfacesKey.OpenSubKey(Path.Combine(singleInterfaceKey, "ProxyStubClsid32")))
                         {
-                            var proxyGuid = proxyKey?.GetValue(null, null) as string;
-                            if (proxyGuid == null) continue;
+                            if (proxyKey?.GetValue(null, null) is not string proxyGuid) continue;
 
-                            var matchClass = _comEntries.FirstOrDefault(x => string.Equals(x.Guid, proxyGuid, StringComparison.OrdinalIgnoreCase));
+                            _comEntriesByGuid.TryGetValue(proxyGuid, out var matchClass);
                             matchClass?.InterfaceNames.Add(Path.Combine(interfacesKey.Name, singleInterfaceKey));
                         }
                     }
@@ -174,7 +178,8 @@ namespace UninstallTools.Junk.Finders.Registry
             }
         }
 
-        private static void GetClsidEntries(ICollection<ComEntry> results, RegistryKey classes)
+        private static void GetClsidEntries(ICollection<ComEntry> results,
+            IDictionary<string, ComEntry> resultsByGuid, RegistryKey classes)
         {
             // https://docs.microsoft.com/en-us/windows/desktop/com/clsid-key-hklm
             using (var clsid = RegistryTools.OpenRegistryKey(Path.Combine(classes.Name, "CLSID"), false, true))
@@ -192,7 +197,8 @@ namespace UninstallTools.Junk.Finders.Registry
                         guidKey = clsid.OpenSubKey(clsidGuid);
                         if (guidKey == null) continue;
 
-                        var result = results.FirstOrDefault(x => string.Equals(x.Guid, clsidGuid, StringComparison.OrdinalIgnoreCase)) ?? new ComEntry(clsidGuid);
+                        if (!resultsByGuid.TryGetValue(clsidGuid, out var result))
+                            result = new ComEntry(clsidGuid);
 
                         using (var inprocKey = guidKey.OpenSubKey("InprocServer32"))
                         {
@@ -218,6 +224,7 @@ namespace UninstallTools.Junk.Finders.Registry
                         }
 
                         results.Add(result);
+                        resultsByGuid[clsidGuid] = result;
                     }
                     catch (SystemException ex)
                     {
@@ -231,7 +238,8 @@ namespace UninstallTools.Junk.Finders.Registry
             }
         }
 
-        private static void GetTypeLibEntries(ICollection<ComEntry> results, RegistryKey classes)
+        private static void GetTypeLibEntries(ICollection<ComEntry> results,
+            IDictionary<string, ComEntry> resultsByGuid, RegistryKey classes)
         {
             using (var typeLibKey = RegistryTools.OpenRegistryKey(Path.Combine(classes.Name, "TypeLib"), false, true))
             {
@@ -246,7 +254,8 @@ namespace UninstallTools.Junk.Finders.Registry
                         var versionKeyName = guidKey?.GetSubKeyNames().FirstOrDefault();
                         if (versionKeyName == null) continue;
 
-                        var result = results.FirstOrDefault(x => string.Equals(x.Guid, typeLibKeyGuid, StringComparison.OrdinalIgnoreCase)) ?? new ComEntry(typeLibKeyGuid);
+                        if (!resultsByGuid.TryGetValue(typeLibKeyGuid, out var result))
+                            result = new ComEntry(typeLibKeyGuid);
 
                         foreach (var fileKeyPath in new[] { Path.Combine(versionKeyName, "0\\win32"), Path.Combine(versionKeyName, "0\\win64") })
                         {
@@ -260,6 +269,7 @@ namespace UninstallTools.Junk.Finders.Registry
 
                                 result.FullFilename = PathTools.NormalizePath(Environment.ExpandEnvironmentVariables(path));
                                 results.Add(result);
+                                resultsByGuid[typeLibKeyGuid] = result;
                                 break;
                             }
                         }
@@ -282,7 +292,7 @@ namespace UninstallTools.Junk.Finders.Registry
             return junk;
         }
 
-        private IJunkResult JunkFromValue(ApplicationUninstallerEntry target, string key, string valueName)
+        private RegistryValueJunk JunkFromValue(ApplicationUninstallerEntry target, string key, string valueName)
         {
             var junk = new RegistryValueJunk(key, valueName, target, this);
             junk.Confidence.Add(ConfidenceRecords.ExplicitConnection);

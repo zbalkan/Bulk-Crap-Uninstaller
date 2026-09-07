@@ -364,7 +364,7 @@ namespace BulkCrapUninstaller.Forms
             var ste = SelectedTaskEntries.ToList();
 
             toolStripButtonFolderOpen.Enabled = ste.Any(x => x.UninstallerEntry.InstallLocation.IsNotEmpty());
-            toolStripButtonProperties.Enabled = ste.Any();
+            toolStripButtonProperties.Enabled = ste.Count != 0;
 
             toolStripButtonRun.Enabled = ste.Any(x =>
                 x.CurrentStatus == UninstallStatus.Waiting || x.CurrentStatus == UninstallStatus.Failed ||

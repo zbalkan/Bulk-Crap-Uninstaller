@@ -3,13 +3,14 @@
     Apache License Version 2.0
 */
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using Klocman.Extensions;
 using Klocman.Forms.Tools;
 using Klocman.Tools;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using UninstallTools.Junk.Containers;
 using UninstallTools.Properties;
 
@@ -85,16 +86,10 @@ namespace UninstallTools.Junk
         {
             var results = new HashSet<string>();
 
-            void AddRange(IEnumerable<string> paths)
-            {
-                foreach (var path in paths
+            void AddRange(IEnumerable<string> paths) => results.UnionWith(paths
                     .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .Attempt(System.IO.Path.GetFullPath)
-                    .Select(x => x.ToLowerInvariant()))
-                {
-                    results.Add(path);
-                }
-            }
+                    .Attempt(Path.GetFullPath)
+                    .Select(x => x.ToLowerInvariant()));
 
             AddRange(Enum.GetValues<Klocman.Native.CSIDL>().Attempt(WindowsTools.GetEnvironmentPath));
 
@@ -118,6 +113,10 @@ namespace UninstallTools.Junk
         public static IEnumerable<IJunkResult> FindJunk(IEnumerable<ApplicationUninstallerEntry> targets,
             ICollection<ApplicationUninstallerEntry> allUninstallers, ListGenerationProgress.ListGenerationCallback progressCallback)
         {
+            ArgumentNullException.ThrowIfNull(targets);
+            ArgumentNullException.ThrowIfNull(allUninstallers);
+            ArgumentNullException.ThrowIfNull(progressCallback);
+
             progressCallback(new ListGenerationProgress(-1, 0, Localisation.Junk_Progress_Startup));
 
             var scanners = ReflectionTools.GetTypesImplementingBase<IJunkCreator>()

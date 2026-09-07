@@ -130,7 +130,7 @@ namespace Klocman
             if (Disposed) return;
             value = DateTime.UtcNow.ToLongTimeString() + " - " + value;
             base.WriteLine(value);
-            base.Flush();
+            Flush();
         }
     }
 }

@@ -120,7 +120,7 @@ namespace UninstallTools.Factory
             // Get directories that can be relatively safely checked
             return directoriesToCheck.Where(check => !directoriesToSkip.Any(skip =>
                 check.FullName.StartsWith(skip, StringComparison.InvariantCultureIgnoreCase)))
-                .Distinct((pair, otherPair) => PathTools.PathsEqual(pair.FullName, otherPair.FullName));
+                .DistinctBy(x => PathTools.NormalizePath(x.FullName), StringComparer.InvariantCultureIgnoreCase);
         }
 
         /// <summary>
@@ -217,8 +217,8 @@ namespace UninstallTools.Factory
             if (result.ExecutableFiles.Count > 40)
                 return;
 
-            var anyFiles = result.ExecutableFiles.Any();
-            if (UninstallToolsGlobalConfig.IsKnownFolder(directory) || !anyFiles && !result.BinSubdirs.Any())
+            var anyFiles = result.ExecutableFiles.Count != 0;
+            if (UninstallToolsGlobalConfig.IsKnownFolder(directory) || !anyFiles && result.BinSubdirs.Count == 0)
             {
                 foreach (var dir in result.OtherSubdirs)
                     CreateFromDirectoryHelper(results, dir, level + 1, dirsToSkip);

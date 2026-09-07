@@ -198,7 +198,7 @@ namespace BulkCrapUninstaller.Functions
                     targetList.RemoveAll(protectedTargets);
                 }
 
-                if (targetList.Any())
+                if (targetList.Count != 0)
                 {
                     _lockApplication(true);
 
@@ -564,7 +564,7 @@ namespace BulkCrapUninstaller.Functions
                             var found = applicationUninstallerEntries.Where(
                                 x => PathTools.PathsEqual(item.InstallLocation, x.InstallLocation)).ToList();
 
-                            if (!found.Any()) continue;
+                            if (found.Count == 0) continue;
 
                             items.Remove(item);
 
@@ -687,7 +687,9 @@ namespace BulkCrapUninstaller.Functions
         {
             var output = new List<ApplicationUninstallerEntry>();
             var processed = new List<DirectoryInfo>();
-            foreach (var dir in results.Distinct(PathTools.PathsEqual).OrderBy(x => x.FullName))
+            foreach (var dir in results
+                         .DistinctBy(x => PathTools.NormalizePath(x.FullName), StringComparer.InvariantCultureIgnoreCase)
+                         .OrderBy(x => x.FullName))
             {
                 if (processed.Any(x => x.FullName.Contains(dir.FullName, StringComparison.InvariantCultureIgnoreCase)))
                     continue;

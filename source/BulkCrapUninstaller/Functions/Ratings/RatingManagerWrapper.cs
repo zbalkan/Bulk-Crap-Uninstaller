@@ -109,7 +109,7 @@ namespace BulkCrapUninstaller.Functions.Ratings
             {
                 MessageBoxes.RatingsDisabled();
             }
-            else if (!entries.Any() || entries.All(x => string.IsNullOrEmpty(x.RatingId)))
+            else if (entries.Length == 0 || entries.All(x => string.IsNullOrEmpty(x.RatingId)))
             {
                 MessageBoxes.RatingUnavailable();
             }

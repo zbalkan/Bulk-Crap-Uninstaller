@@ -127,7 +127,7 @@ namespace BulkCrapUninstaller.Controls
         private void button1_Click(object sender, EventArgs e)
         {
             if (openFileDialog1.ShowDialog() == DialogResult.OK
-                && openFileDialog1.FileNames.Any())
+                && openFileDialog1.FileNames.Length != 0)
                 ProcessFiles(openFileDialog1.FileNames);
         }
 

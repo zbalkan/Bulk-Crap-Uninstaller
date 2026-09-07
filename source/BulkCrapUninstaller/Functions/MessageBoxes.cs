@@ -319,7 +319,7 @@ namespace BulkCrapUninstaller.Functions
         /// </summary>
         internal static PressedButton ProtectedItemsWarningQuestion(string[] affectedKeyNames)
         {
-            if (!affectedKeyNames.Any())
+            if (affectedKeyNames.Length == 0)
                 return PressedButton.Yes;
 
             switch (

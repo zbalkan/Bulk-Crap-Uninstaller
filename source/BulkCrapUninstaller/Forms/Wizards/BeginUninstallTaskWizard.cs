@@ -102,12 +102,12 @@ namespace BulkCrapUninstaller.Forms
 
             var relatedUninstallers = _otherUninstallers.Select(
                 x => new { Entry = x, Related = GetRelatedUninstallers(x, _selectedUninstallers).ToList() })
-                .Where(x => x.Related.Any()).ToList();
+                .Where(x => x.Related.Count != 0).ToList();
 
             relatedUninstallerAdder1.SetRelatedApps(relatedUninstallers
                 .Select(x => new RelatedUninstallerAdder.RelatedApplicationEntry(x.Entry, x.Related)));
 
-            _anyRelatedUninstallers = relatedUninstallers.Any();
+            _anyRelatedUninstallers = relatedUninstallers.Count != 0;
             if (!_anyRelatedUninstallers)
                 PageNumber = 1;
         }
@@ -153,7 +153,7 @@ namespace BulkCrapUninstaller.Forms
 
                         var selectedTaskEntries = uninstallConfirmation1.GetResults().ToList();
 
-                        if (!selectedTaskEntries.Any())
+                        if (selectedTaskEntries.Count == 0)
                         {
                             MessageBoxes.NoUninstallersSelectedInfo();
 

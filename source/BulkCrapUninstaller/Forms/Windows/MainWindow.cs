@@ -733,7 +733,7 @@ namespace BulkCrapUninstaller.Forms
             var items = _listView.SelectedUninstallers.ToArray();
             var protectedItems = items.Where(x => x.IsProtected).ToArray();
 
-            if (!_setMan.Selected.Settings.AdvancedDisableProtection && protectedItems.Any())
+            if (!_setMan.Selected.Settings.AdvancedDisableProtection && protectedItems.Length != 0)
             {
                 var affectedKeyNames = protectedItems.Select(x => x.DisplayName).ToArray();
                 if (MessageBoxes.ProtectedItemsWarningQuestion(affectedKeyNames) == MessageBoxes.PressedButton.Cancel)
@@ -742,7 +742,7 @@ namespace BulkCrapUninstaller.Forms
                 items = _listView.SelectedUninstallers.Where(x => !x.IsProtected).ToArray();
             }
 
-            if (!items.Any() || !MessageBoxes.DeleteRegKeysConfirmation(items.Select(x => x.DisplayName).ToArray()))
+            if (items.Length == 0 || !MessageBoxes.DeleteRegKeysConfirmation(items.Select(x => x.DisplayName).ToArray()))
                 return;
 
             foreach (var item in items)
@@ -1096,7 +1096,7 @@ namespace BulkCrapUninstaller.Forms
             var items = _listView.SelectedUninstallers.ToArray();
             var protectedItems = items.Where(x => x.IsProtected).ToArray();
 
-            if (!_setMan.Selected.Settings.AdvancedDisableProtection && protectedItems.Any())
+            if (!_setMan.Selected.Settings.AdvancedDisableProtection && protectedItems.Length != 0)
             {
                 var affectedKeyNames = protectedItems.Select(x => x.DisplayName).ToArray();
                 if (MessageBoxes.ProtectedItemsWarningQuestion(affectedKeyNames) == MessageBoxes.PressedButton.Cancel)
@@ -1105,7 +1105,7 @@ namespace BulkCrapUninstaller.Forms
                 items = _listView.SelectedUninstallers.Where(x => !x.IsProtected).ToArray();
             }
 
-            if (!items.Any())
+            if (items.Length == 0)
             {
                 MessageBoxes.NoUninstallersSelectedInfo();
                 return;
@@ -1690,10 +1690,11 @@ namespace BulkCrapUninstaller.Forms
 
         private void AddSelectedAsAdvancedFilters(bool exclude)
         {
-            var selectedUninstallers = _listView.SelectedUninstallers;
+            var selectedUninstallers = _listView.SelectedUninstallers.ToList();
+            var selectedNames = new HashSet<string>(selectedUninstallers.Select(x => x.DisplayName));
             var filters = advancedFilters1.CurrentList.Filters;
 
-            var existingFilters = filters.Where(x => selectedUninstallers.Any(y => x.Name == y.DisplayName));
+            var existingFilters = filters.Where(x => selectedNames.Contains(x.Name));
             filters.RemoveAll(existingFilters.ToList());
 
             filters.AddRange(selectedUninstallers.Select(x => new Filter(x.DisplayName, exclude, new FilterCondition(x.DisplayName, ComparisonMethod.Equals,
@@ -1742,6 +1743,8 @@ namespace BulkCrapUninstaller.Forms
                 }
             }
         }
+        internal static readonly string[] first = new[] { "@echo off", "echo BCU Generated batch uninstall script" };
+        internal static readonly string[] second = new[] { "pause", "exit" };
 
         private void exportToABatchUninstallScriptToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -1761,11 +1764,11 @@ namespace BulkCrapUninstaller.Forms
                     try
                     {
                         File.WriteAllLines(d.FileName,
-                            new[] { "@echo off", "echo BCU Generated batch uninstall script" }.Concat(
+                        first.Concat(
                             _listView.SelectedUninstallers
                                 .Select(x => x.QuietUninstallPossible ? x.QuietUninstallString : x.UninstallString)
                                 .Where(x => !string.IsNullOrEmpty(x))
-                            ).Concat(new[] { "pause", "exit" }).ToArray());
+                            ).Concat(second).ToArray());
                     }
                     catch (SystemException ex)
                     {

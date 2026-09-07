@@ -229,7 +229,7 @@ namespace BulkCrapUninstaller.Forms
             {
                 var items = objectListViewMain.SelectedObjects.Cast<IJunkResult>().Select(x => x.ToLongString()).ToArray();
 
-                if (items.Any())
+                if (items.Length != 0)
                 {
                     Clipboard.SetText(string.Join(Environment.NewLine, items));
                 }
@@ -257,7 +257,7 @@ namespace BulkCrapUninstaller.Forms
                     .Where(x => x.Reason.IsNotEmpty())
                     .Select(x => x.Reason)
                     .ToArray();
-                if (items.Any())
+                if (items.Length != 0)
                     positives = string.Join("\n", items);
             }
 
@@ -268,7 +268,7 @@ namespace BulkCrapUninstaller.Forms
                     .Where(x => x.Reason.IsNotEmpty())
                     .Select(x => x.Reason)
                     .ToArray();
-                if (items.Any())
+                if (items.Length != 0)
                     negatives = string.Join("\n", items);
             }
 
@@ -369,7 +369,7 @@ namespace BulkCrapUninstaller.Forms
                 }
             }
 
-            if (failed.Any())
+            if (failed.Count != 0)
             {
                 failed.Sort();
 

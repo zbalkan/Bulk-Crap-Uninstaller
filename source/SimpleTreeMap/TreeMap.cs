@@ -52,6 +52,7 @@ namespace SimpleTreeMap
         private Slice<object> _currentSlice;
         private List<SliceRectangle<object>> _rectangles;
         private HashSet<object> _selectedObjects;
+        private static readonly int[] sourceArray = new[] { 10, 9, 8, 7, 6, 5, 3, 3, 3, 1 };
         private SliceRectangle<object> _currentHoveredRectangle;
         private static readonly SolidBrush SelectedRectBrush = new(Color.DodgerBlue);
         readonly Dictionary<Color, Brush> _brushCache = new();
@@ -162,6 +163,7 @@ namespace SimpleTreeMap
 
         protected override void OnPaint(PaintEventArgs e)
         {
+            ArgumentNullException.ThrowIfNull(e);
             base.OnPaint(e);
 
             // todo draw whole thing based on input, input is set by populate
@@ -169,7 +171,7 @@ namespace SimpleTreeMap
             //var font = new Font("Arial", 8);
             var gfx = e.Graphics;
 
-            gfx.FillRectangle(new SolidBrush(Color.Black), ClientRectangle);
+            gfx.FillRectangle(Brushes.Black, ClientRectangle);
 
             if (_rectangles == null)
             {
@@ -280,10 +282,10 @@ namespace SimpleTreeMap
         {
             ObjectNameGetter = o => o.ToString();
             ObjectValueGetter = o => (int)o;
-            Populate(new[] { 10, 9, 8, 7, 6, 5, 3, 3, 3, 1 }.Cast<object>());
+            Populate(sourceArray.Cast<object>());
         }
 
-        private void ScaleValuesLog(ICollection<Element<object>> elements)
+        private static void ScaleValuesLog(ICollection<Element<object>> elements)
         {
             var max = elements.Max(x => x.Value);
 

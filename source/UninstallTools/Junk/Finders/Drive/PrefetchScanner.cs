@@ -52,7 +52,7 @@ namespace UninstallTools.Junk.Finders.Drive
         public override IEnumerable<IJunkResult> FindJunk(ApplicationUninstallerEntry target)
         {
             var results = new List<IJunkResult>();
-            if (_pfFiles == null || target.SortedExecutables == null || target.SortedExecutables.Length == 0) return results;
+            if (_pfFiles == null || target is null || target.SortedExecutables == null || target.SortedExecutables.Length == 0) return results;
 
             var targetExeNames = target.SortedExecutables
                 .Attempt(Path.GetFileName)
@@ -72,6 +72,8 @@ namespace UninstallTools.Junk.Finders.Drive
                 .Where(x => !string.IsNullOrEmpty(x))
                 .Select(x => x.ToLowerInvariant());
             var usedByOthersLookup = new HashSet<string>(usedByOthers);
+
+            results.Capacity += pfFileHits.Count;
 
             foreach (var pfHit in pfFileHits)
             {

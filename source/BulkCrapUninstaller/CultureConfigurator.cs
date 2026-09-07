@@ -18,29 +18,7 @@ namespace BulkCrapUninstaller
         private static CultureInfo EnUsCulture => _enUsCulture ??= CultureInfo.GetCultureInfo("en-US");
 
         public static IEnumerable<CultureInfo> SupportedLanguages => _supportedLanguages ??= GetSupportedLanguages();
-
-        private static IEnumerable<CultureInfo> GetSupportedLanguages()
-        {
-            // Check what translations are available in program dir
-            var translationDirectories = Program.AssemblyLocation.GetDirectories()
-                .Where(x =>
-                {
-                    if (x.Name.Length < 2)
-                        return false;
-                    try
-                    {
-                        return x.GetFiles("BCUninstaller.resources.dll", SearchOption.TopDirectoryOnly).Any();
-                    }
-                    catch (SystemException e)
-                    {
-                        Console.WriteLine(e);
-                        return false;
-                    }
-                })
-                .Select(x => x.Name.Substring(0, 2).ToLower())
-                .ToList();
-
-            var supportedCultures = new[]
+        private static readonly string[] baseEnumerable = new[]
             {
                 // en - English
                 //("en-US"),
@@ -160,7 +138,30 @@ namespace BulkCrapUninstaller
 
                 // Traditional Chinese
                 "zh-Hant"
-            }.Attempt(CultureInfo.GetCultureInfo).ToList();
+            };
+
+        private static IEnumerable<CultureInfo> GetSupportedLanguages()
+        {
+            // Check what translations are available in program dir
+            var translationDirectories = Program.AssemblyLocation.GetDirectories()
+                .Where(x =>
+                {
+                    if (x.Name.Length < 2)
+                        return false;
+                    try
+                    {
+                        return x.GetFiles("BCUninstaller.resources.dll", SearchOption.TopDirectoryOnly).Length != 0;
+                    }
+                    catch (SystemException e)
+                    {
+                        Console.WriteLine(e);
+                        return false;
+                    }
+                })
+                .Select(x => x.Name.Substring(0, 2).ToLower())
+                .ToList();
+
+            var supportedCultures = baseEnumerable.Attempt(CultureInfo.GetCultureInfo).ToList();
 
             supportedCultures.Add(EnUsCulture);
 

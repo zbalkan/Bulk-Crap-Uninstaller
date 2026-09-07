@@ -312,7 +312,8 @@ namespace UninstallTools.Uninstaller
                                         UninstallerEntry.QuietUninstallPossible;
 
                     var watchedProcesses = new List<Process> { uninstaller };
-                    int[] previousWatchedProcessIds = { };
+                    var processSnapshotSet = new HashSet<int>(processSnapshot);
+                    int[] previousWatchedProcessIds = Array.Empty<int>();
 
                     var idleCounter = 0;
 
@@ -330,7 +331,7 @@ namespace UninstallTools.Uninstaller
                                 watchedProcesses.AddRange(watchedProcess.GetChildProcesses());
                         }
 
-                        watchedProcesses = CleanupDeadProcesses(watchedProcesses, processSnapshot).ToList();
+                        watchedProcesses = CleanupDeadProcesses(watchedProcesses, processSnapshotSet).ToList();
 
                         // Check if we are done, or if there are some proceses left that we missed.
                         // We are done when the entry process and all of its spawns exit.
@@ -339,7 +340,7 @@ namespace UninstallTools.Uninstaller
                             if (string.IsNullOrEmpty(UninstallerEntry.InstallLocation))
                                 break;
 
-                            FindAndAddProcessesToWatch(watchedProcesses, processSnapshot);
+                            FindAndAddProcessesToWatch(watchedProcesses, processSnapshotSet);
 
                             if (watchedProcesses.Count == 0)
                                 break;
@@ -539,8 +540,10 @@ namespace UninstallTools.Uninstaller
             }).Where(x => x >= 0);
         }
 
-        private void FindAndAddProcessesToWatch(ICollection<Process> watchedProcesses, int[] runningProcessIds)
+        private void FindAndAddProcessesToWatch(List<Process> watchedProcesses, HashSet<int> runningProcessIds)
         {
+            ArgumentNullException.ThrowIfNull(watchedProcesses);
+            ArgumentNullException.ThrowIfNull(runningProcessIds);
             var candidates = Process.GetProcesses().Where(x => !runningProcessIds.Contains(x.Id));
             foreach (var process in candidates)
             {
@@ -564,7 +567,7 @@ namespace UninstallTools.Uninstaller
         /// <summary>
         /// Remove duplicate, dead, and blacklisted processes
         /// </summary>
-        private static IEnumerable<Process> CleanupDeadProcesses(IEnumerable<Process> watchedProcesses, int[] runningProcessIds)
+        private static IEnumerable<Process> CleanupDeadProcesses(IEnumerable<Process> watchedProcesses, HashSet<int> runningProcessIds)
         {
             return watchedProcesses.DistinctBy(x => x.Id).Where(p =>
             {

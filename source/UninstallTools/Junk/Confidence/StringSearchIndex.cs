@@ -39,11 +39,19 @@ namespace UninstallTools.Junk.Confidence
                 AddOutputs(node, matches);
                 foreach (var character in input)
                 {
-                    while (!ReferenceEquals(node, _root) && !node.Children.ContainsKey(character))
-                        node = node.Failure;
+                    while (true)
+                    {
+                        if (node.Children.TryGetValue(character, out var next))
+                        {
+                            node = next;
+                            break;
+                        }
 
-                    if (node.Children.TryGetValue(character, out var next))
-                        node = next;
+                        if (ReferenceEquals(node, _root))
+                            break;
+
+                        node = node.Failure;
+                    }
 
                     AddOutputs(node, matches);
                 }

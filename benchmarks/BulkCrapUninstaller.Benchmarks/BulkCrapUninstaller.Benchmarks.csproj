@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>BulkCrapUninstaller.Benchmarks</AssemblyName>
     <RootNamespace>BulkCrapUninstaller.Benchmarks</RootNamespace>
     <IsPackable>false</IsPackable>
@@ -8,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
-    <ProjectReference Include="..\UninstallTools\UninstallTools.csproj" />
+    <Compile Include="..\..\source\UninstallTools\Junk\Confidence\StringSearchIndex.cs"
+             Link="Production\StringSearchIndex.cs" />
   </ItemGroup>
 </Project>

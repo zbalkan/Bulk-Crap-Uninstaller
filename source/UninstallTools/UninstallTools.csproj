@@ -12,7 +12,6 @@
 
 	<ItemGroup>
 		<InternalsVisibleTo Include="BulkCrapUninstallerTests" />
-		<InternalsVisibleTo Include="BulkCrapUninstaller.Benchmarks" />
 	</ItemGroup>
 
 	<ItemGroup>

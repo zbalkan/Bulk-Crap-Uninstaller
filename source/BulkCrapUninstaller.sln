@@ -82,7 +82,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NBug", "NBug_custom\NBug.cs
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BCU-launcher", "BCU-launcher\BCU-launcher.vcxproj", "{C54B5AFD-C079-4852-960E-906B8CEE0E07}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A47-5304FB4BF705}") = "BulkCrapUninstaller.Benchmarks", "BulkCrapUninstaller.Benchmarks\BulkCrapUninstaller.Benchmarks.csproj", "{D4D9494E-39FA-45F7-9949-22C92CB7A1D8}"
+Project("{9A19103F-16F7-4668-BE54-9A47-5304FB4BF705}") = "BulkCrapUninstaller.Benchmarks", "..\benchmarks\BulkCrapUninstaller.Benchmarks\BulkCrapUninstaller.Benchmarks.csproj", "{D4D9494E-39FA-45F7-9949-22C92CB7A1D8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

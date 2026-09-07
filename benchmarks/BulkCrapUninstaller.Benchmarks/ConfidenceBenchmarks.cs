@@ -6,7 +6,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using BenchmarkDotNet.Attributes;
-using UninstallTools.Junk.Confidence;
 
 namespace BulkCrapUninstaller.Benchmarks
 {
@@ -14,8 +13,8 @@ namespace BulkCrapUninstaller.Benchmarks
     [ShortRunJob]
     public class ConfidenceBenchmarks
     {
-        private ConfidenceRecord[] _existing;
-        private ConfidenceRecord[] _incoming;
+        private ConfidenceValue[] _existing;
+        private ConfidenceValue[] _incoming;
 
         [Params(50, 200, 500)]
         public int Count { get; set; }
@@ -24,17 +23,17 @@ namespace BulkCrapUninstaller.Benchmarks
         public void Setup()
         {
             _existing = Enumerable.Range(0, Count)
-                .Select(x => new ConfidenceRecord(x, "existing-" + x))
+                .Select(x => new ConfidenceValue(x, "existing-" + x))
                 .ToArray();
             _incoming = Enumerable.Range(Count / 2, Count)
-                .Select(x => new ConfidenceRecord(x, x < Count ? "existing-" + x : "incoming-" + x))
+                .Select(x => new ConfidenceValue(x, x < Count ? "existing-" + x : "incoming-" + x))
                 .ToArray();
         }
 
         [Benchmark(Baseline = true)]
         public int RepeatedListContains()
         {
-            var target = new List<ConfidenceRecord>(_existing);
+            var target = new List<ConfidenceValue>(_existing);
             foreach (var value in _incoming)
             {
                 if (!target.Contains(value))
@@ -46,11 +45,16 @@ namespace BulkCrapUninstaller.Benchmarks
         [Benchmark]
         public int HashSetBackedAddRange()
         {
-            var target = new ConfidenceCollection();
-            foreach (var value in _existing)
-                target.Add(value);
-            target.AddRange(_incoming);
-            return target.Count();
+            var target = new List<ConfidenceValue>(_existing);
+            var seen = new HashSet<ConfidenceValue>(target);
+            foreach (var value in _incoming)
+            {
+                if (seen.Add(value))
+                    target.Add(value);
+            }
+            return target.Count;
         }
+
+        private sealed record ConfidenceValue(int Change, string Reason);
     }
 }

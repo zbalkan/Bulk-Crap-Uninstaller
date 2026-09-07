@@ -120,7 +120,7 @@ namespace UninstallTools.Factory
             // Get directories that can be relatively safely checked
             return directoriesToCheck.Where(check => !directoriesToSkip.Any(skip =>
                 check.FullName.StartsWith(skip, StringComparison.InvariantCultureIgnoreCase)))
-                .Distinct((pair, otherPair) => PathTools.PathsEqual(pair.FullName, otherPair.FullName));
+                .DistinctBy(x => PathTools.NormalizePath(x.FullName), StringComparer.InvariantCultureIgnoreCase);
         }
 
         /// <summary>

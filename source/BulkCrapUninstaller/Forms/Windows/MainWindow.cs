@@ -1690,10 +1690,11 @@ namespace BulkCrapUninstaller.Forms
 
         private void AddSelectedAsAdvancedFilters(bool exclude)
         {
-            var selectedUninstallers = _listView.SelectedUninstallers;
+            var selectedUninstallers = _listView.SelectedUninstallers.ToList();
+            var selectedNames = new HashSet<string>(selectedUninstallers.Select(x => x.DisplayName));
             var filters = advancedFilters1.CurrentList.Filters;
 
-            var existingFilters = filters.Where(x => selectedUninstallers.Any(y => x.Name == y.DisplayName));
+            var existingFilters = filters.Where(x => selectedNames.Contains(x.Name));
             filters.RemoveAll(existingFilters.ToList());
 
             filters.AddRange(selectedUninstallers.Select(x => new Filter(x.DisplayName, exclude, new FilterCondition(x.DisplayName, ComparisonMethod.Equals,

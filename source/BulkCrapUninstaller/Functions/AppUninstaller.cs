@@ -687,7 +687,9 @@ namespace BulkCrapUninstaller.Functions
         {
             var output = new List<ApplicationUninstallerEntry>();
             var processed = new List<DirectoryInfo>();
-            foreach (var dir in results.Distinct(PathTools.PathsEqual).OrderBy(x => x.FullName))
+            foreach (var dir in results
+                         .DistinctBy(x => PathTools.NormalizePath(x.FullName), StringComparer.InvariantCultureIgnoreCase)
+                         .OrderBy(x => x.FullName))
             {
                 if (processed.Any(x => x.FullName.Contains(dir.FullName, StringComparison.InvariantCultureIgnoreCase)))
                     continue;

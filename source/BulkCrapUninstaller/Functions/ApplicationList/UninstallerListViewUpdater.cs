@@ -31,6 +31,7 @@ namespace BulkCrapUninstaller.Functions.ApplicationList
         private readonly MainWindow _reference;
         readonly SettingBinder<Settings> _settings = Settings.Default.SettingBinder;
         private IEnumerable<ApplicationUninstallerEntry> _allUninstallers;
+        private HashSet<ApplicationUninstallerEntry> _allUninstallersSet = new();
         private bool _firstRefresh = true;
         private bool _listRefreshIsRunning;
 
@@ -65,7 +66,13 @@ namespace BulkCrapUninstaller.Functions.ApplicationList
         public IEnumerable<ApplicationUninstallerEntry> AllUninstallers
         {
             get { return _allUninstallers ?? Enumerable.Empty<ApplicationUninstallerEntry>(); }
-            private set { _allUninstallers = value; }
+            private set
+            {
+                _allUninstallers = value;
+                _allUninstallersSet = value == null
+                    ? new HashSet<ApplicationUninstallerEntry>()
+                    : new HashSet<ApplicationUninstallerEntry>(value);
+            }
         }
 
         public IEnumerable<ApplicationUninstallerEntry> FilteredUninstallers
@@ -97,7 +104,7 @@ namespace BulkCrapUninstaller.Functions.ApplicationList
             : _listView.SelectedObjects.Count;
 
         public IEnumerable<ApplicationUninstallerEntry> SelectedUninstallers => _listView.ListView.CheckBoxes
-            ? _listView.ListView.GetAllObjectsWithMappedCheckState(CheckState.Checked).Cast<ApplicationUninstallerEntry>().Where(e => e != null && AllUninstallers.Contains(e))
+            ? _listView.ListView.GetAllObjectsWithMappedCheckState(CheckState.Checked).Cast<ApplicationUninstallerEntry>().Where(e => e != null && _allUninstallersSet.Contains(e))
             : _listView.SelectedObjects.Where(e => e != null);
 
         public void Dispose()

@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - test/context-menu-rebase-validation
+  pull_request:
+    branches:
+      - master
 
 permissions:
   contents: read
@@ -34,8 +37,6 @@ jobs:
             throw "Unexpected merge base: $base"
           }
 
-          # The final feature routes shortcut uninstall through the GUI, so the
-          # earlier BCU-console implementation must not survive the squash.
           git restore --source=$base -- source/BCU-console/Program.cs
 
           $project = "source/UninstallTools/UninstallTools.csproj"
@@ -52,8 +53,6 @@ jobs:
           git add -A
           git commit -m "Remove obsolete console shortcut uninstall path"
 
-          # Collapse all feature history, including the cleanup above, into the
-          # actual end-state relative to the original merge base.
           git reset --soft $base
           git commit -m "Add shortcut context-menu uninstall"
 

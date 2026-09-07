@@ -26,6 +26,21 @@ namespace UninstallTools.Junk
                 .Where(JunkDoesNotPointToSelf);
         }
 
+        private static IEnumerable<IJunkResult> CleanUpResultsWithPerformance(
+            ICollection<IJunkResult> input, Stopwatch totalStopwatch, string operationName)
+        {
+            var cleanupStopwatch = Stopwatch.StartNew();
+            var outputCount = 0;
+            foreach (var result in CleanUpResults(input))
+            {
+                outputCount++;
+                yield return result;
+            }
+
+            Debug.WriteLine($"[Performance] {operationName} cleanup took {cleanupStopwatch.ElapsedMilliseconds}ms and reduced {input.Count} results to {outputCount}");
+            Debug.WriteLine($"[Performance] Complete {operationName} took {totalStopwatch.ElapsedMilliseconds}ms");
+        }
+
         /// <summary>
         /// Make sure that the junk result doesn't point to this application.
         /// </summary>
@@ -118,16 +133,21 @@ namespace UninstallTools.Junk
         public static IEnumerable<IJunkResult> FindJunk(IEnumerable<ApplicationUninstallerEntry> targets,
             ICollection<ApplicationUninstallerEntry> allUninstallers, ListGenerationProgress.ListGenerationCallback progressCallback)
         {
+            var totalStopwatch = Stopwatch.StartNew();
             progressCallback(new ListGenerationProgress(-1, 0, Localisation.Junk_Progress_Startup));
 
+            var discoveryStopwatch = Stopwatch.StartNew();
             var scanners = ReflectionTools.GetTypesImplementingBase<IJunkCreator>()
                 .Attempt(Activator.CreateInstance)
                 .Cast<IJunkCreator>()
                 .ToList();
+            Debug.WriteLine($"[Performance] Junk scanner discovery took {discoveryStopwatch.ElapsedMilliseconds}ms and found {scanners.Count} scanners");
 
             foreach (var junkCreator in scanners)
             {
+                var setupStopwatch = Stopwatch.StartNew();
                 junkCreator.Setup(allUninstallers);
+                Debug.WriteLine($"[Performance] Scanner {junkCreator.GetType().Name} setup took {setupStopwatch.ElapsedMilliseconds}ms");
             }
 
             var results = new List<IJunkResult>();
@@ -135,6 +155,8 @@ namespace UninstallTools.Junk
             var progress = 0;
             foreach (var junkCreator in scanners)
             {
+                var scannerStopwatch = Stopwatch.StartNew();
+                var initialResultCount = results.Count;
                 var scannerProgress = new ListGenerationProgress(progress++, scanners.Count, junkCreator.CategoryName);
 
                 var entryProgress = 0;
@@ -146,6 +168,7 @@ namespace UninstallTools.Junk
                     try { results.AddRange(junkCreator.FindJunk(target)); }
                     catch (SystemException ex) { PremadeDialogs.GenericError(ex); }
                 }
+                Debug.WriteLine($"[Performance] Scanner {junkCreator.GetType().Name} scan took {scannerStopwatch.ElapsedMilliseconds}ms for {targetEntries.Count} targets and returned {results.Count - initialResultCount} results");
             }
 
             progressCallback(new ListGenerationProgress(-1, 0, Localisation.Junk_Progress_Finishing));
@@ -153,15 +176,23 @@ namespace UninstallTools.Junk
             foreach (var target in targetEntries)
                 results.AddRange(target.AdditionalJunk);
 
-            return CleanUpResults(results);
+            return CleanUpResultsWithPerformance(results, totalStopwatch, "junk scan");
         }
 
         public static IEnumerable<IJunkResult> FindProgramFilesJunk(
             ICollection<ApplicationUninstallerEntry> allUninstallers)
         {
+            var totalStopwatch = Stopwatch.StartNew();
             var pfScanner = new ProgramFilesOrphans();
+            var setupStopwatch = Stopwatch.StartNew();
             pfScanner.Setup(allUninstallers);
-            return CleanUpResults(pfScanner.FindAllJunk().ToList());
+            Debug.WriteLine($"[Performance] Scanner {nameof(ProgramFilesOrphans)} setup took {setupStopwatch.ElapsedMilliseconds}ms");
+
+            var scanStopwatch = Stopwatch.StartNew();
+            var results = pfScanner.FindAllJunk().ToList();
+            Debug.WriteLine($"[Performance] Scanner {nameof(ProgramFilesOrphans)} scan took {scanStopwatch.ElapsedMilliseconds}ms and returned {results.Count} results");
+
+            return CleanUpResultsWithPerformance(results, totalStopwatch, "orphaned Program Files scan");
         }
     }
 }

@@ -207,11 +207,16 @@ namespace UninstallTools.Factory
             {
                 progressCallback?.Invoke(new ListGenerationProgress(progress++, newResults.Count, null));
 
-                var matchedEntry = baseEntries.Select(x => new { x, score = ApplicationEntryTools.AreEntriesRelated(x, entry) })
-                    .Where(x => x.score >= 1)
-                    .OrderByDescending(x => x.score)
-                    .Select(x => x.x)
-                    .FirstOrDefault();
+                ApplicationUninstallerEntry matchedEntry = null;
+                var bestScore = 0;
+                foreach (var candidate in baseEntries)
+                {
+                    var score = ApplicationEntryTools.AreEntriesRelated(candidate, entry);
+                    if (score <= bestScore) continue;
+
+                    bestScore = score;
+                    matchedEntry = candidate;
+                }
 
                 if (matchedEntry != null)
                 {

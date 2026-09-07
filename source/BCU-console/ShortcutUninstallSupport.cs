@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using Klocman.Tools;
@@ -60,6 +61,12 @@ namespace BCU_console
                 entry => PathTools.PathsEqual(entry?.UninstallerFullFilename, executablePath));
             if (exactMatch.Status != ShortcutUninstallMatchStatus.NotFound)
                 return exactMatch;
+
+            var executableMatch = FindUnique(candidates,
+                entry => entry?.GetSortedExecutables()
+                    .Any(path => PathTools.PathsEqual(path, executablePath)) == true);
+            if (executableMatch.Status != ShortcutUninstallMatchStatus.NotFound)
+                return executableMatch;
 
             return FindUnique(candidates,
                 entry => PathTools.SubPathIsInsideBasePath(entry?.InstallLocation, executablePath, true, false));

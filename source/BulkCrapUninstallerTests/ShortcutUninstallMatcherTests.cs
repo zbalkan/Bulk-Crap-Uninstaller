@@ -25,6 +25,19 @@ namespace BulkCrapUninstallerTests
         }
 
         [TestMethod]
+        public void MatchExecutablePathReturnsUniqueSortedExecutableMatch()
+        {
+            var expected = CreateEntry("C:\\Apps\\Widget\\uninstall.exe", "C:\\Apps\\Widget");
+            expected.SortedExecutables = new[] {"C:\\Launchers\\Widget.exe"};
+
+            var result = ShortcutUninstallMatcher.MatchExecutablePath(
+                new List<ApplicationUninstallerEntry> {expected}, "c:\\launchers\\WIDGET.EXE");
+
+            Assert.AreEqual(ShortcutUninstallMatchStatus.Unique, result.Status);
+            Assert.AreSame(expected, result.Entry);
+        }
+
+        [TestMethod]
         public void MatchExecutablePathReturnsUniqueEntryForExecutableInsideInstallLocation()
         {
             var expected = CreateEntry("C:\\Apps\\Widget\\uninstall.exe", "C:\\Apps\\Widget");

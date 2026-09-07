@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>BulkCrapUninstaller.Benchmarks</AssemblyName>
+    <RootNamespace>BulkCrapUninstaller.Benchmarks</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+    <ProjectReference Include="..\UninstallTools\UninstallTools.csproj" />
+  </ItemGroup>
+</Project>

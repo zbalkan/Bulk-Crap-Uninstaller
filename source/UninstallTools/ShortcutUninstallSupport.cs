@@ -10,9 +10,8 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using Klocman.Tools;
-using UninstallTools;
 
-namespace BCU_console
+namespace UninstallTools
 {
     internal enum ShortcutUninstallMatchStatus
     {

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using BCU_console;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using UninstallTools;
 

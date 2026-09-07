@@ -7,7 +7,6 @@
   <ItemGroup>
     <ProjectReference Include="..\BulkCrapUninstaller\BulkCrapUninstaller.csproj" />
     <ProjectReference Include="..\UninstallTools\UninstallTools.csproj" />
-    <ProjectReference Include="..\BCU-console\BCU-console.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />

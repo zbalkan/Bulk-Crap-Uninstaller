@@ -24,8 +24,8 @@ namespace BulkCrapUninstaller.Benchmarks
         [GlobalSetup]
         public void Setup()
         {
-            _patterns = Enumerable.Range(0, Count).Select(x => $"application-{x:D4}").ToArray();
-            _inputs = Enumerable.Range(Count / 2, Count).Select(x => $"vendor application-{x:D4} component").ToArray();
+            _patterns = [.. Enumerable.Range(0, Count).Select(x => $"application-{x:D4}")];
+            _inputs = [.. Enumerable.Range(Count / 2, Count).Select(x => $"vendor application-{x:D4} component")];
             _index = new StringSearchIndex(_patterns);
         }
 

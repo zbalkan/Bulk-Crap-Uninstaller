@@ -20,7 +20,7 @@ namespace BulkCrapUninstaller.Benchmarks
         [GlobalSetup]
         public void Setup()
         {
-            _scores = Enumerable.Range(0, Count).Select(x => (x * 7919) % 101).ToArray();
+            _scores = [.. Enumerable.Range(0, Count).Select(x => (x * 7919) % 101)];
         }
 
         [Benchmark(Baseline = true)]

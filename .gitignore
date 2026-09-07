@@ -220,3 +220,4 @@ _Pvt_Extensions
 # Misc
 *.odt#
 *.DotSettings
+/BenchmarkDotNet.Artifacts/results

@@ -23,9 +23,9 @@ namespace BulkCrapUninstaller.Benchmarks
         [GlobalSetup]
         public void Setup()
         {
-            _items = Enumerable.Range(0, Count).ToList();
-            _itemSet = new HashSet<int>(_items);
-            _queries = Enumerable.Range(Count / 2, Count).ToArray();
+            _items = [.. Enumerable.Range(0, Count)];
+            _itemSet = [.. _items];
+            _queries = [.. Enumerable.Range(Count / 2, Count)];
         }
 
         [Benchmark(Baseline = true)]

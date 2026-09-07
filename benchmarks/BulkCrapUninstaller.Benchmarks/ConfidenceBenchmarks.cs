@@ -22,12 +22,8 @@ namespace BulkCrapUninstaller.Benchmarks
         [GlobalSetup]
         public void Setup()
         {
-            _existing = Enumerable.Range(0, Count)
-                .Select(x => new ConfidenceValue(x, "existing-" + x))
-                .ToArray();
-            _incoming = Enumerable.Range(Count / 2, Count)
-                .Select(x => new ConfidenceValue(x, x < Count ? "existing-" + x : "incoming-" + x))
-                .ToArray();
+            _existing = [.. Enumerable.Range(0, Count).Select(x => new ConfidenceValue(x, "existing-" + x))];
+            _incoming = [.. Enumerable.Range(Count / 2, Count).Select(x => new ConfidenceValue(x, x < Count ? "existing-" + x : "incoming-" + x))];
         }
 
         [Benchmark(Baseline = true)]

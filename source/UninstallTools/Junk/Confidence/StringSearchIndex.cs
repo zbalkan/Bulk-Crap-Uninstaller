@@ -18,7 +18,7 @@ namespace UninstallTools.Junk.Confidence
 
         internal StringSearchIndex(IEnumerable<string> patterns)
         {
-            if (patterns == null) throw new ArgumentNullException(nameof(patterns));
+            ArgumentNullException.ThrowIfNull(patterns);
 
             foreach (var pattern in patterns)
                 Add(pattern ?? throw new ArgumentException("Patterns cannot contain null values.", nameof(patterns)));
@@ -28,7 +28,7 @@ namespace UninstallTools.Junk.Confidence
 
         internal HashSet<string> FindMatches(IEnumerable<string> inputs)
         {
-            if (inputs == null) throw new ArgumentNullException(nameof(inputs));
+            ArgumentNullException.ThrowIfNull(inputs);
 
             var matches = new HashSet<string>(StringComparer.Ordinal);
             foreach (var input in inputs)
@@ -105,7 +105,7 @@ namespace UninstallTools.Junk.Confidence
             }
         }
 
-        private static void AddOutputs(Node node, ISet<string> matches)
+        private static void AddOutputs(Node node, HashSet<string> matches)
         {
             foreach (var output in node.Outputs)
                 matches.Add(output);
@@ -113,8 +113,8 @@ namespace UninstallTools.Junk.Confidence
 
         private sealed class Node
         {
-            internal Dictionary<char, Node> Children { get; } = new();
-            internal List<string> Outputs { get; } = new();
+            internal Dictionary<char, Node> Children { get; } = [];
+            internal List<string> Outputs { get; } = [];
             internal Node Failure { get; set; }
         }
     }

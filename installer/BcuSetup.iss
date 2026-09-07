@@ -183,13 +183,13 @@ Source: "{#InputDir}\win-x86\CleanLogs.bat";    DestDir: "{app}\win-x86"; Compon
 #endif
 
 [Registry]
-Root: HKCR; Subkey: "lnkfile\shell\BCUninstaller.Uninstall"; ValueType: string; ValueName: "MUIVerb"; ValueData: "Uninstall with BCUninstaller"; Flags: uninsdeletekey; Check: IsNotPortable
-Root: HKCR; Subkey: "lnkfile\shell\BCUninstaller.Uninstall"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#MyAppExeName}"; Check: IsNotPortable
+Root: HKCR; Subkey: "lnkfile\shell\BCUninstaller.Uninstall"; ValueType: string; ValueName: "MUIVerb"; ValueData: "Uninstall with BCUninstaller"; Flags: uninsdeletekey; Tasks: shortcutcontextmenu; Check: IsNotPortable
+Root: HKCR; Subkey: "lnkfile\shell\BCUninstaller.Uninstall"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#MyAppExeName}"; Tasks: shortcutcontextmenu; Check: IsNotPortable
 #ifdef Light
-Root: HKCR; Subkey: "lnkfile\shell\BCUninstaller.Uninstall\command"; ValueType: string; ValueData: """{app}\BCU-console.exe"" shortcut-uninstall ""%1"""; Check: IsNotPortable
+Root: HKCR; Subkey: "lnkfile\shell\BCUninstaller.Uninstall\command"; ValueType: string; ValueData: """{app}\BCU-console.exe"" shortcut-uninstall ""%1"""; Tasks: shortcutcontextmenu; Check: IsNotPortable
 #else
-Root: HKCR; Subkey: "lnkfile\shell\BCUninstaller.Uninstall\command"; ValueType: string; ValueData: """{app}\win-x64\BCU-console.exe"" shortcut-uninstall ""%1"""; Check: Is64BitInstallMode and IsNotPortable
-Root: HKCR; Subkey: "lnkfile\shell\BCUninstaller.Uninstall\command"; ValueType: string; ValueData: """{app}\win-x86\BCU-console.exe"" shortcut-uninstall ""%1"""; Check: not Is64BitInstallMode and IsNotPortable
+Root: HKCR; Subkey: "lnkfile\shell\BCUninstaller.Uninstall\command"; ValueType: string; ValueData: """{app}\win-x64\BCU-console.exe"" shortcut-uninstall ""%1"""; Tasks: shortcutcontextmenu; Check: Is64BitInstallMode and IsNotPortable
+Root: HKCR; Subkey: "lnkfile\shell\BCUninstaller.Uninstall\command"; ValueType: string; ValueData: """{app}\win-x86\BCU-console.exe"" shortcut-uninstall ""%1"""; Tasks: shortcutcontextmenu; Check: not Is64BitInstallMode and IsNotPortable
 #endif
 
 [InstallDelete]
@@ -221,6 +221,7 @@ Type: files; Name: "{app}\*\RatingCashe*"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; Check: IsNotPortable
+Name: "shortcutcontextmenu"; Description: "Add ""Uninstall with BCUninstaller"" to shortcut context menus"; Flags: unchecked; Check: IsNotPortable
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Check: IsNotPortable;

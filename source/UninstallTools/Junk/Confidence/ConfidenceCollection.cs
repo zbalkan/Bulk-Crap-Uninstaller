@@ -66,7 +66,12 @@ namespace UninstallTools.Junk.Confidence
 
         internal void AddRange(IEnumerable<ConfidenceRecord> values)
         {
-            _items.AddRange(values.Where(x => !_items.Contains(x)));
+            var seen = new HashSet<ConfidenceRecord>(_items);
+            foreach (var value in values)
+            {
+                if (seen.Add(value))
+                    _items.Add(value);
+            }
         }
 
         public IEnumerator<ConfidenceRecord> GetEnumerator()

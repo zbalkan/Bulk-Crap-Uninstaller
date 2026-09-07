@@ -34,7 +34,7 @@ namespace UninstallTools.Junk.Confidence
 
         public override int GetHashCode()
         {
-            return Change.GetHashCode() ^ Reason.GetHashCode();
+            return Change.GetHashCode() ^ (Reason?.GetHashCode() ?? 0);
         }
     }
 }

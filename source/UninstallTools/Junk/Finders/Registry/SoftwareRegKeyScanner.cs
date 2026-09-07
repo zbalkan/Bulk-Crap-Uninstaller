@@ -214,6 +214,13 @@ namespace UninstallTools.Junk.Finders.Registry
         {
             var input = itemsToCompare.ToList();
             var output = new List<RegistryKeyJunk>();
+            var inputByPath = new Dictionary<string, RegistryKeyJunk>(StringComparer.InvariantCultureIgnoreCase);
+            foreach (var item in input)
+            {
+                var normalizedPath = PathTools.NormalizePath(item.FullRegKeyPath);
+                if (!inputByPath.ContainsKey(normalizedPath))
+                    inputByPath.Add(normalizedPath, item);
+            }
 
             foreach (var registryJunkNode in input)
             {
@@ -229,7 +236,7 @@ namespace UninstallTools.Junk.Finders.Registry
                 {
                     var nodePath = Path.Combine(keyToTest, nodeName);
                     // Check if the same node exists in other root keys
-                    var node = input.FirstOrDefault(x => PathTools.PathsEqual(x.FullRegKeyPath, nodePath));
+                    inputByPath.TryGetValue(PathTools.NormalizePath(nodePath), out var node);
 
                     if (node != null)
                     {

@@ -1,0 +1,128 @@
+name: Context menu rebase validation
+
+on:
+  push:
+    branches:
+      - test/context-menu-rebase-validation
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-2022
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: microsoft/setup-msbuild@v2
+
+      - name: Reproduce cleanup, squash, and rebase
+        shell: pwsh
+        run: |
+          git config core.autocrlf false
+          git config user.name "Rebase Validation"
+          git config user.email "rebase-validation@users.noreply.github.com"
+          git fetch origin master context-menu
+          git switch -C validation-work origin/context-menu
+
+          $base = (git merge-base HEAD origin/master).Trim()
+          Write-Host "Merge base: $base"
+          if ($base -ne "608321de98e92297377b1eb69029af55c25504a1") {
+            throw "Unexpected merge base: $base"
+          }
+
+          # The final feature routes shortcut uninstall through the GUI, so the
+          # earlier BCU-console implementation must not survive the squash.
+          git restore --source=$base -- source/BCU-console/Program.cs
+
+          $project = "source/UninstallTools/UninstallTools.csproj"
+          $bytes = [System.IO.File]::ReadAllBytes($project)
+          $text = [System.Text.Encoding]::UTF8.GetString($bytes)
+          $before = $text
+          $text = $text.Replace("`t`t<InternalsVisibleTo Include=`"BCU-console`" />`r`n", "")
+          $text = $text.Replace("`t`t<InternalsVisibleTo Include=`"BCU-console`" />`n", "")
+          if ($text -eq $before) {
+            throw "BCU-console InternalsVisibleTo entry was not found"
+          }
+          [System.IO.File]::WriteAllText($project, $text, [System.Text.UTF8Encoding]::new($false))
+
+          git add -A
+          git commit -m "Remove obsolete console shortcut uninstall path"
+
+          # Collapse all feature history, including the cleanup above, into the
+          # actual end-state relative to the original merge base.
+          git reset --soft $base
+          git commit -m "Add shortcut context-menu uninstall"
+
+          Write-Host "Before rebase:"
+          git log --oneline --decorate --graph -8
+
+          git rebase origin/master
+
+          Write-Host "After rebase:"
+          git log --oneline --decorate --graph -10
+          git diff --stat origin/master...HEAD
+          git diff --check origin/master...HEAD
+
+      - name: Validate rebased feature shape
+        shell: pwsh
+        run: |
+          $count = [int](git rev-list --count origin/master..HEAD)
+          if ($count -ne 1) {
+            throw "Expected exactly one feature commit after rebase, got $count"
+          }
+
+          $actual = @(git diff --name-only origin/master...HEAD | Sort-Object)
+          $expected = @(
+            "installer/BcuSetup.iss",
+            "source/BulkCrapUninstaller/EntryPoint.cs",
+            "source/BulkCrapUninstaller/Forms/Windows/MainWindow.ShortcutUninstall.cs",
+            "source/BulkCrapUninstallerTests/ShortcutUninstallMatcherTests.cs",
+            "source/UninstallTools/ShortcutUninstallSupport.cs",
+            "source/UninstallTools/UninstallTools.csproj"
+          ) | Sort-Object
+
+          if (($actual -join "`n") -ne ($expected -join "`n")) {
+            Write-Host "Expected files:"
+            $expected
+            Write-Host "Actual files:"
+            $actual
+            throw "Unexpected rebased feature file set"
+          }
+
+          git diff --exit-code origin/master -- source/BCU-console/Program.cs
+          git diff --exit-code origin/master -- source/BulkCrapUninstallerTests/BulkCrapUninstallerTests.csproj
+
+          if (Select-String -Path source/BCU-console/Program.cs -Pattern 'shortcut-uninstall' -Quiet) {
+            throw "Obsolete shortcut-uninstall command remains in BCU-console"
+          }
+
+          if (Select-String -Path source/UninstallTools/UninstallTools.csproj -Pattern 'InternalsVisibleTo Include="BCU-console"' -Quiet) {
+            throw "Obsolete BCU-console friend assembly remains"
+          }
+
+          if (-not (Select-String -Path source/BulkCrapUninstaller/EntryPoint.cs -Pattern 'shortcut-uninstall' -Quiet)) {
+            throw "GUI shortcut-uninstall entry point is missing"
+          }
+
+          if (Select-String -Path installer/BcuSetup.iss -Pattern 'BCUninstaller\.Uninstall\\command.*BCU-console\.exe' -Quiet) {
+            throw "Installer still routes shortcut context menu through BCU-console"
+          }
+
+      - name: Restore
+        shell: pwsh
+        run: msbuild source\BulkCrapUninstaller.sln /t:Restore /p:Configuration=Release /p:Platform="Any CPU" /verbosity:minimal
+
+      - name: Build
+        shell: pwsh
+        run: >
+          msbuild source\BulkCrapUninstaller.sln /t:Publish /p:Configuration=Release /p:Platform="Any CPU" /verbosity:minimal
+          /p:filealignment=512 /p:DeployOnBuild=true /p:PublishSingleFile=False /p:SelfContained=False /p:PublishReadyToRun=false /p:PublishTrimmed=False
+          /p:PublishProtocol=FileSystem /p:PublishDir="${{ github.workspace }}\bin\publish"
+
+      - name: Run tests
+        shell: pwsh
+        run: dotnet test source\BulkCrapUninstallerTests\BulkCrapUninstallerTests.csproj -c Release --no-restore --verbosity minimal
